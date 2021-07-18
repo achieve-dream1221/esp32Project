@@ -131,6 +131,7 @@ class SSD1306_I2C(SSD1306):
         self.i2c.write(buf)
         self.i2c.stop()
 
+    # 阴码, 行列式, 等比字体
     def show_text_zh(self, text: str, x: int, y: int, isVertical: bool, size=12):
         x *= size
         y *= size
