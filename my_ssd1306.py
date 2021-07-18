@@ -131,23 +131,43 @@ class SSD1306_I2C(SSD1306):
         self.i2c.write(buf)
         self.i2c.stop()
 
-    # 阴码, 行列式, 等比字体
-    def show_text_zh(self, text: str, x: int, y: int, isVertical: bool, size=12):
+    def show_error(self, text):
+        self.show_text(text, 30, 56)
+
+    def print(self, text: str, x: int = 0, y: int = 0, isVertical: bool = False, size=12):
+        self.fill(0)
         x *= size
         y *= size
         row_max_cout_zh = self.width // size
         col_max_cout_zh = self.height // size
-        cout_row, cout_col = 0, 0
+        count_row, count_col = 0, 0
         for k in text:
-            if cout_row >= row_max_cout_zh:
+            if count_row >= row_max_cout_zh:
                 y += size
                 x = 0
-                cout_row = 0
-            if cout_col >= col_max_cout_zh:
+                count_row = 0
+            if count_col >= col_max_cout_zh:
                 x += size
                 y = 0
-                cout_col = 0
-            byte_datas = fonts[k]
+                count_col = 0
+            try:
+                if k in fonts:
+                    byte_datas = fonts[k]
+                elif 0 <= ord(k) <= 127:
+                    if isVertical:
+                        self.show_text(k, x, y)
+                        y += 8
+                        count_col += 0.7
+                    else:
+                        self.show_text(k, x, y + 4)
+                        x += 8
+                        count_row += 0.7
+                    continue
+                else:
+                    raise KeyError
+            except KeyError:
+                self.show_error('KeyError')
+                return
             y_2 = y
             for i in range(size):
                 all_ch = '{:08b}'.format(byte_datas[0][i]) + '{:08b}'.format(byte_datas[1][i])
@@ -161,10 +181,10 @@ class SSD1306_I2C(SSD1306):
                 y_2 += 1
             if isVertical:
                 y += size
-                cout_col += 1
+                count_col += 1
             else:
                 x += size
-                cout_row += 1
+                count_row += 1
         self.show()
         gc.collect()
 
