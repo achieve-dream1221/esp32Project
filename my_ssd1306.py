@@ -1,3 +1,4 @@
+import gc
 from micropython import const
 from machine import SoftI2C, Pin
 import framebuf
@@ -87,8 +88,9 @@ class SSD1306:
     def scroll(self, dx, dy):
         self.framebuf.scroll(dx, dy)
 
-    def text(self, string, x, y, col=1):
+    def show_text(self, string, x, y, col=1):
         self.framebuf.text(string, x, y, col)
+        self.show()
 
     def hline(self, x, y, w, col):
         self.framebuf.hline(x, y, w, col)
@@ -129,25 +131,41 @@ class SSD1306_I2C(SSD1306):
         self.i2c.write(buf)
         self.i2c.stop()
 
-    def text_zh(self, text: str, x: int, y: int, isVertical: bool, size=12):
+    def show_text_zh(self, text: str, x: int, y: int, isVertical: bool, size=12):
         x *= size
         y *= size
+        row_max_cout_zh = self.width // size
+        col_max_cout_zh = self.height // size
+        cout_row, cout_col = 0, 0
         for k in text:
+            if cout_row >= row_max_cout_zh:
+                y += size
+                x = 0
+                cout_row = 0
+            if cout_col >= col_max_cout_zh:
+                x += size
+                y = 0
+                cout_col = 0
             byte_datas = fonts[k]
             y_2 = y
             for i in range(size):
-                left = '{:08b}'.format(byte_datas[0][i])
-                right = '{:08b}'.format(byte_datas[1][i])
-                all_ch = left + right
+                all_ch = '{:08b}'.format(byte_datas[0][i]) + '{:08b}'.format(byte_datas[1][i])
                 x_2 = x
                 for j in range(16):
-                    self.pixel(x_2, y_2, int(all_ch[j]))
-                    x_2 += 1
+                    if x_2 <= self.width and y_2 <= self.height:
+                        self.pixel(x_2, y_2, int(all_ch[j]))
+                        x_2 += 1
+                    else:
+                        break
                 y_2 += 1
             if isVertical:
                 y += size
+                cout_col += 1
             else:
                 x += size
+                cout_row += 1
+        self.show()
+        gc.collect()
 
 
 def MySSD1306_I2C():
