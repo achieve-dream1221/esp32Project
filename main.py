@@ -1,4 +1,4 @@
-from wulei_ssd1306 import MySSD1306_I2C
+from my_ssd1306 import MySSD1306_I2C
 
 screen = MySSD1306_I2C()
 
